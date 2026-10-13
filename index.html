@@ -3,7 +3,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Canteen Subsidy</title>
 <meta name="theme-color" content="#1f7a4d">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <style>
 :root{--bg:#f6f5f1;--card:#fff;--tx:#1d1d1b;--mu:#6b6b66;--ac:#1f7a4d;--acx:#fff;--bd:#e3e1da;--bad:#c0392b;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -11,7 +10,7 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 :root[data-theme="dark"]{--bg:#141413;--card:#201f1d;--tx:#f0eee8;--mu:#9a9890;--ac:#3fb67d;--acx:#08170f;--bd:#34332f;--bad:#ef6b5b}
 *{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:520px;margin:0 auto;padding:10px 14px 80px}
+main{max-width:560px;margin:0 auto;padding:10px 14px 80px}
 header{display:flex;align-items:center;gap:6px;margin-bottom:10px}
 header h1{font-size:17px;margin:0;flex:1}
 .ib{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:12px;padding:0;cursor:pointer;flex:0 0 auto}
@@ -26,25 +25,25 @@ input{width:100%;min-width:0;padding:12px;font-size:17px;border:1px solid var(--
 .row{display:flex;gap:8px;align-items:center}.row>input{flex:1}.sp{flex:1}
 .mu{color:var(--mu);font-size:14px}.big{font-size:40px;font-weight:800;line-height:1.1}
 .li{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd)}
-video{width:100%;border-radius:12px;background:#000;max-height:260px;object-fit:cover;margin-bottom:8px}
+.tap{text-align:center;padding:6px 0 14px}.tap svg{width:60px;height:60px;fill:none;stroke:var(--ac);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .msg{padding:10px 12px;border-radius:10px;margin-bottom:10px;font-weight:600}
 .msg.err{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
 .msg.ok{background:color-mix(in srgb,var(--ac) 16%,transparent);color:var(--ac)}
-.hide{display:none!important}.qr{display:flex;justify-content:center;padding:10px;background:#fff;border-radius:10px;margin-top:8px}
-.tot{font-size:15px;display:flex;justify-content:space-between}
+.hide{display:none!important}.tot{font-size:15px;display:flex;justify-content:space-between}
 #modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:9}
 #modal .card{width:100%;max-width:320px;margin:0}
 #pin{text-align:center;letter-spacing:.5em;font-size:26px}
 </style></head><body><main>
 <header><h1>Canteen Subsidy</h1>
-<button class="ib g" id="theme" title="Theme"></button><button class="ib g hide" id="lock" title="Lock admin"></button></header>
+<button class="ib" id="conn" title="Connect RFID reader"></button><button class="ib g" id="theme" title="Theme"></button><button class="ib g hide" id="lock" title="Lock admin"></button></header>
 <nav><button class="ib on" id="t-pos" title="Cashier"></button><button class="ib" id="t-emp" title="Employees (admin)"></button><button class="ib" id="t-log" title="Report (admin)"></button></nav>
 <div id="msg"></div>
+<div class="mu" id="dbg" style="margin:-4px 0 8px"></div>
 
 <section id="pos">
   <div class="card" id="scanCard">
-    <video id="vid" class="hide" playsinline muted></video>
-    <div class="row"><button class="ib p" id="camBtn" title="Scan QR"></button><button class="ib" id="snapBtn" title="Scan from photo"></button><input id="manual" placeholder="Employee ID" autocapitalize="characters"><button class="ib" id="goBtn" title="Look up"></button><input type="file" id="snap" accept="image/*" capture="environment" class="hide"></div>
+    <div class="tap"><div id="cardIco"></div><div class="mu" id="rstat" style="margin-top:6px"></div></div>
+    <div class="row"><input id="manual" placeholder="Employee ID or card UID" autocapitalize="characters" autocomplete="off"><button class="ib" id="goBtn" title="Look up"></button></div>
   </div>
   <div class="card hide" id="cust">
     <div class="row"><div class="sp"><div id="cName" style="font-weight:700;font-size:18px"></div><div class="mu" id="cId"></div></div><button class="ib g" id="cancelBtn" title="Cancel"></button></div>
@@ -63,7 +62,8 @@ video{width:100%;border-radius:12px;background:#000;max-height:260px;object-fit:
 
 <section id="emp" class="hide">
   <div class="card"><div class="row"><input id="eid" placeholder="ID" autocapitalize="characters"><input id="enm" placeholder="Name"></div>
-  <div class="row" style="margin-top:8px"><input id="epin" type="password" inputmode="numeric" maxlength="4" placeholder="4-digit PIN"><button class="ib p" id="eadd" title="Add employee"></button><button class="ib" id="apin" title="Change admin PIN"></button><button class="ib" id="eall" title="Download all QR cards (one image)"></button></div></div>
+  <div class="row" style="margin-top:8px"><input id="epin" type="password" inputmode="numeric" maxlength="4" placeholder="4-digit PIN"><input id="ecard" placeholder="Card UID" autocapitalize="characters"><button class="ib" id="ecardBtn" title="Tap card to read its UID"></button></div>
+  <div class="row" style="margin-top:8px"><span class="mu sp">Card can also be assigned later</span><button class="ib" id="apin" title="Change admin PIN"></button><button class="ib p" id="eadd" title="Add employee"></button></div></div>
   <div id="elist"></div>
 </section>
 
@@ -75,31 +75,32 @@ video{width:100%;border-radius:12px;background:#000;max-height:260px;object-fit:
 <input id="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off">
 <div class="row" style="margin-top:10px"><button class="ib" id="mx" title="Cancel" style="flex:1"></button><button class="ib p" id="mo" title="OK" style="flex:1"></button></div></div></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const SUB=100,DAY=864e5,$=i=>document.getElementById(i),peso=n=>'₱'+n.toFixed(2);
-const IC={img:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>',cam:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
-stop:'<rect x="6" y="6" width="12" height="12" rx="2"/>',go:'<path d="M5 12h14M13 6l6 6-6 6"/>',x:'<path d="M18 6 6 18M6 6l12 12"/>',
-plus:'<path d="M12 5v14M5 12h14"/>',check:'<path d="M20 6 9 17l-5-5"/>',cart:'<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>',
+const IC={card:'<rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22M5 15h4"/>',zap:'<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+go:'<path d="M5 12h14M13 6l6 6-6 6"/>',x:'<path d="M18 6 6 18M6 6l12 12"/>',plus:'<path d="M12 5v14M5 12h14"/>',check:'<path d="M20 6 9 17l-5-5"/>',
+cart:'<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>',
 users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
 file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/>',
 dl:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
 key:'<circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 9.2-9.2M16 7l3 3"/>',trash:'<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
-qr:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20h1"/>',
 sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
 moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',auto:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>'};
 const ico=n=>`<svg viewBox="0 0 24 24">${IC[n]}</svg>`,setI=(id,n)=>$(id).innerHTML=ico(n);
-[['camBtn','cam'],['goBtn','go'],['cancelBtn','x'],['addBtn','plus'],['chargeBtn','check'],['t-pos','cart'],['t-emp','users'],['t-log','file'],
-['exp','dl'],['lock','lock'],['eadd','plus'],['apin','key'],['mx','x'],['mo','check'],['eall','dl'],['snapBtn','img']].forEach(a=>setI(...a));
+[['goBtn','go'],['cancelBtn','x'],['addBtn','plus'],['chargeBtn','check'],['t-pos','cart'],['t-emp','users'],['t-log','file'],
+['exp','dl'],['lock','lock'],['eadd','plus'],['apin','key'],['mx','x'],['mo','check'],['conn','zap'],['ecardBtn','card'],['cardIco','card']].forEach(a=>setI(...a));
 
 const sha=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
-let S=null,cur=null,cart=[],stream=null,raf=0,admin=false;
+let S=null,cur=null,cart=[],admin=false;
 try{const r=localStorage.getItem('csub2');if(r)S=JSON.parse(r)}catch(e){}
 const save=()=>{try{localStorage.setItem('csub2',JSON.stringify(S))}catch(e){}};
-async function init(){if(!S){S={adm:await sha('ADMIN:0000'),emps:{EMP001:{n:'Juan Dela Cruz',h:await sha('EMP001:1234')},EMP002:{n:'Maria Santos',h:await sha('EMP002:5678')}},wal:{},log:[]};save()}
-  $('rdate').value=ymd(new Date());themeApply()}
 const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const normUid=v=>String(v||'').trim().toUpperCase().replace(/[\s:-]/g,'');
+const cardOwner=u=>u?Object.keys(S.emps).find(id=>S.emps[id].c===u):undefined;
+async function init(){if(!S){S={adm:await sha('ADMIN:0000'),emps:{EMP001:{n:'Juan Dela Cruz',h:await sha('EMP001:1234')},EMP002:{n:'Maria Santos',h:await sha('EMP002:5678')}},wal:{},log:[]};save()}
+  $('rdate').value=ymd(new Date());themeApply();setConn(false);
+  if(SUPPORTED)navigator.serial.getPorts().then(ps=>{if(ps[0])openPort(ps[0]).catch(()=>{})}).catch(()=>{})}
 
 /* theme */
 let TH='auto';try{TH=localStorage.getItem('csub-theme')||'auto'}catch(e){}
@@ -112,26 +113,61 @@ function ask(t,s){return new Promise(res=>{$('mt').textContent=t;$('ms').textCon
   const done=v=>{$('modal').classList.add('hide');$('mo').onclick=$('mx').onclick=$('pin').onkeydown=null;res(v)};
   $('mo').onclick=()=>done($('pin').value);$('mx').onclick=()=>done(null);$('pin').onkeydown=e=>{if(e.key==='Enter')done($('pin').value)}})}
 const okPin=p=>/^\d{4}$/.test(p||'');
+let mt=0;function msg(t,k,ms=5000){clearTimeout(mt);const m=$('msg');m.innerHTML=t?`<div class="msg ${k}">${t}</div>`:'';if(t)mt=setTimeout(()=>{m.innerHTML=''},ms)}
 
-function msg(t,k){const m=$('msg');m.innerHTML=t?`<div class="msg ${k}">${t}</div>`:'';if(t)setTimeout(()=>{m.innerHTML=''},5000)}
+/* ===== RFID reader over USB serial (Web Serial) ===== */
+const SUPPORTED='serial' in navigator;
+let port=null,rdr=null,loopP=null,reading=false;
+function setConn(on){$('conn').classList.toggle('p',on);$('conn').title=on?'Reader connected (tap to disconnect)':'Connect RFID reader';
+  $('rstat').textContent=on?'Reader connected · tap a card':(SUPPORTED?'Reader not connected · tap the plug icon':'This browser has no Web Serial · use Chrome or Edge on a computer')}
+async function openPort(p){await p.open({baudRate:9600});port=p;setConn(true);$('dbg').textContent='Connected. Waiting for the reader (the Arduino restarts for ~2 seconds)…';loopP=readLoop()}
+async function connect(){if(port){await disconnect();return}
+  if(!SUPPORTED){msg('Web Serial is not supported in this browser. Use Chrome or Edge on a computer.','err');return}
+  try{await openPort(await navigator.serial.requestPort())}
+  catch(e){port=null;setConn(false);if(e&&e.name!=='NotFoundError')msg('Could not open the reader. Close the Arduino Serial Monitor or other apps using it.','err')}}
+async function disconnect(){reading=false;try{rdr&&await rdr.cancel()}catch(e){}try{loopP&&await loopP}catch(e){}try{port&&await port.close()}catch(e){}port=null;setConn(false)}
+async function readLoop(){reading=true;const dec=new TextDecoder();let buf='';
+  while(port&&port.readable&&reading){rdr=port.readable.getReader();
+    try{for(;;){const {value,done}=await rdr.read();if(done)break;buf+=dec.decode(value,{stream:true});
+      let i;while((i=buf.indexOf('\n'))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(line)$('dbg').textContent='Reader says: '+line;if(line.startsWith('UID:'))onCard(normUid(line.slice(4)))}}}
+    catch(e){break}finally{rdr.releaseLock()}}
+  if(reading){reading=false;try{await port.close()}catch(e){}port=null;setConn(false);msg('Reader disconnected','err')}}
+async function send(t){try{if(port&&port.writable){const w=port.writable.getWriter();try{await w.write(new TextEncoder().encode(t))}finally{w.releaseLock()}}}catch(e){}}
+$('conn').onclick=connect;
+
+/* card taps */
+let armed=null;
+function arm(t){if(!port){msg('Connect the reader first (plug icon), or type the UID by hand.','err');return}
+  armed=t;msg('Tap the card on the reader now…','ok',20000);setTimeout(()=>{if(armed===t){armed=null;msg('Card read timed out','err')}},20000)}
+function onCard(uid){
+  if(armed){const t=armed,own=cardOwner(uid);armed=null;
+    if(own&&own!==t){msg('That card already belongs to '+esc(S.emps[own].n),'err');send('ERR\n');return}
+    if(t==='form')$('ecard').value=uid;else{S.emps[t].c=uid;save();renderEmps()}
+    msg('Card '+uid+' captured','ok');send('OK\n');return}
+  if(!$('pos').classList.contains('hide')){
+    if(cur){msg('Finish or cancel the current transaction first','err');send('ERR\n');return}
+    const id=cardOwner(uid);if(!id){msg('Card not registered: '+uid,'err');send('ERR\n');return}lookup(id)}}
+$('ecardBtn').onclick=()=>arm('form');
+
 async function tab(n){
   if((n==='emp'||n==='log')&&!admin){const p=await ask('Admin PIN','Required for employees & reports');if(p===null)return;
     if(await sha('ADMIN:'+p)!==S.adm){msg('Wrong admin PIN','err');return}admin=true;$('lock').classList.remove('hide')}
-  if(n==='pos')lockAdmin();
+  if(n==='pos')lockAdmin();armed=null;
   ['pos','emp','log'].forEach(x=>{$(x).classList.toggle('hide',x!==n);$('t-'+x).classList.toggle('on',x===n)});
-  if(n!=='pos')stopCam();if(n==='emp')renderEmps();if(n==='log')renderLog()}
+  if(n==='emp')renderEmps();if(n==='log')renderLog()}
 function lockAdmin(){admin=false;$('lock').classList.add('hide')}
 ['pos','emp','log'].forEach(x=>$('t-'+x).onclick=()=>tab(x));
 $('lock').onclick=()=>tab('pos');
 
+/* cashier */
 function wallet(id){let w=S.wal[id];const now=Date.now();
   if(!w||now-w.issued>=DAY){w=S.wal[id]={issued:now,bal:SUB};save()}return w}
-function lookup(raw){const id=(raw||'').trim().toUpperCase();stopCam();
-  if(!S.emps[id]){msg('Unknown employee: '+(id||'(empty)'),'err');return}
+function lookup(raw){const t=String(raw||'').trim().toUpperCase(),id=S.emps[t]?t:cardOwner(normUid(t));
+  if(!id){msg('Unknown employee or card: '+esc(t||'(empty)'),'err');send('ERR\n');return}
   cur=id;cart=[];const w=wallet(id);
   $('cName').textContent=S.emps[id].n;$('cId').textContent=id;
   ['cust','items'].forEach(x=>$(x).classList.remove('hide'));$('scanCard').classList.add('hide');
-  $('manual').value='';drawCust(w);drawCart()}
+  $('manual').value='';drawCust(w);drawCart();$('price').focus()}
 function drawCust(w){$('cBal').textContent=peso(w.bal);
   const left=w.issued+DAY-Date.now(),h=Math.floor(left/36e5),m=Math.floor(left%36e5/6e4);
   $('cExp').textContent=`Expires in ${h}h ${m}m`+(w.bal<=0?' · fully used':'')}
@@ -139,9 +175,7 @@ function drawCart(){const w=wallet(cur),t=cart.reduce((a,i)=>a+i.p,0),c=Math.min
   $('list').innerHTML=cart.map((i,k)=>`<div class="li"><span>${esc(i.l)}</span><span>${peso(i.p)} <button class="ib g d" data-k="${k}" style="width:36px;height:36px">${ico('x')}</button></span></div>`).join('');
   $('total').textContent=peso(t);$('cov').textContent=peso(c);$('cash').textContent=peso(t-c);$('chargeBtn').disabled=!t;
   $('list').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{cart.splice(+b.dataset.k,1);drawCart()})}
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function reset(){cur=null;cart=[];['cust','items'].forEach(x=>$(x).classList.add('hide'));$('scanCard').classList.remove('hide')}
-
+function reset(){cur=null;cart=[];['cust','items'].forEach(x=>$(x).classList.add('hide'));$('scanCard').classList.remove('hide');$('manual').focus()}
 $('goBtn').onclick=()=>lookup($('manual').value);
 $('manual').onkeydown=e=>{if(e.key==='Enter')lookup(e.target.value)};
 $('cancelBtn').onclick=reset;
@@ -150,97 +184,46 @@ $('addBtn').onclick=()=>{const p=parseFloat($('price').value);if(!(p>0)){msg('En
 $('price').onkeydown=e=>{if(e.key==='Enter')$('addBtn').click()};
 
 /* charge needs the EMPLOYEE's own PIN */
-$('chargeBtn').onclick=async()=>{const id=cur,e=S.emps[id];
-  const t=cart.reduce((a,i)=>a+i.p,0);
+$('chargeBtn').onclick=async()=>{const id=cur,e=S.emps[id],t=cart.reduce((a,i)=>a+i.p,0);
   for(let tries=3;tries>0;tries--){
     const p=await ask('Employee authorization',`${e.n} · enter your PIN to approve ${peso(t)}`);
-    if(p===null){msg('Not authorized. Nothing deducted.','err');return}
+    if(p===null){msg('Not authorized. Nothing deducted.','err');send('ERR\n');return}
     if(await sha(id+':'+p)===e.h){
       const w=wallet(id),c=Math.min(t,w.bal);w.bal=Math.round((w.bal-c)*100)/100;
-      S.log.unshift({ts:Date.now(),id,name:e.n,total:t,sub:c,cash:t-c,items:cart.length});save();
-      msg(`${e.n}: ${peso(t)} · subsidy ${peso(c)} · cash ${peso(t-c)} · left ${peso(w.bal)}`,'ok');reset();return}
-    if(tries>1)msg(`Wrong PIN. ${tries-1} attempt(s) left.`,'err')}
+      S.log.unshift({ts:Date.now(),id,name:e.n,total:t,sub:c,cash:t-c,items:cart.length});save();send('OK\n');
+      msg(`${esc(e.n)}: ${peso(t)} · subsidy ${peso(c)} · cash ${peso(t-c)} · left ${peso(w.bal)}`,'ok');reset();return}
+    send('ERR\n');if(tries>1)msg(`Wrong PIN. ${tries-1} attempt(s) left.`,'err')}
   msg('Too many wrong PINs. Transaction cancelled.','err');reset()};
-
-async function startCam(){try{
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw{name:'NotSupported'};
-  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-  const v=$('vid');v.srcObject=stream;v.classList.remove('hide');await v.play();setI('camBtn','stop');
-  const cv=document.createElement('canvas'),cx=cv.getContext('2d',{willReadFrequently:true});
-  const tick=()=>{if(!stream)return;if(v.readyState===4&&v.videoWidth){cv.width=v.videoWidth;cv.height=v.videoHeight;cx.drawImage(v,0,0);
-    const d=cx.getImageData(0,0,cv.width,cv.height),r=window.jsQR&&jsQR(d.data,d.width,d.height);if(r&&r.data){lookup(r.data);return}}
-    raf=requestAnimationFrame(tick)};tick()}catch(e){stopCam();msg('Camera error ('+(e&&e.name||'unknown')+'). Allow camera access for this site in your browser settings, or tap the photo icon to scan from a picture.','err')}}
-function stopCam(){cancelAnimationFrame(raf);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
-  $('vid').classList.add('hide');setI('camBtn','cam')}
-$('camBtn').onclick=()=>stream?stopCam():startCam();
-
-
-/* photo-based scan (works where live camera is blocked) */
-$('snapBtn').onclick=()=>$('snap').click();
-$('snap').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
-  try{const url=URL.createObjectURL(f),img=new Image();await new Promise((r,j)=>{img.onload=r;img.onerror=j;img.src=url});
-    for(const mx of [1400,900,600]){const k=Math.min(1,mx/Math.max(img.width,img.height)),c=document.createElement('canvas');
-      c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,c.width,c.height);
-      const d=x.getImageData(0,0,c.width,c.height),r=window.jsQR&&jsQR(d.data,d.width,d.height,{inversionAttempts:'attemptBoth'});
-      if(r&&r.data){URL.revokeObjectURL(url);lookup(r.data);return}}
-    URL.revokeObjectURL(url);msg('No QR found in the photo. Retake it closer and steady.','err')}
-  catch(err){msg('Could not read that photo.','err')}};
 
 /* admin: employees */
 function renderEmps(){const l=$('elist');l.innerHTML=Object.entries(S.emps).map(([id,e])=>
-  `<div class="card"><div class="row"><div class="sp"><b>${esc(e.n)}</b><div class="mu">${id}</div></div>
-  <button class="ib" data-q="${id}" title="Show QR">${ico('qr')}</button><button class="ib" data-k="${id}" title="Reset PIN">${ico('key')}</button><button class="ib d" data-d="${id}" title="Remove">${ico('trash')}</button></div><div id="q-${id}"></div></div>`).join('');
-  l.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const box=$('q-'+b.dataset.q);
-    if(box.innerHTML){box.innerHTML='';return}const id=b.dataset.q;box.innerHTML='<div class="qr"></div><div class="row" style="margin-top:8px"><span class="mu sp">Save this employee\'s QR card as an image</span><button class="ib p" title="Download QR card">'+ico('dl')+'</button></div>';
-    new QRCode(box.firstChild,{text:id,width:180,height:180});box.querySelector('button').onclick=()=>saveCards([id])});
+  `<div class="card"><div class="row"><div class="sp"><b>${esc(e.n)}</b><div class="mu">${esc(id)} · ${e.c?'card '+e.c:'no card'}</div></div>
+  <button class="ib" data-c="${esc(id)}" title="Assign / replace card">${ico('card')}</button><button class="ib" data-k="${esc(id)}" title="Reset PIN">${ico('key')}</button><button class="ib d" data-d="${esc(id)}" title="Remove">${ico('trash')}</button></div></div>`).join('');
+  l.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>arm(b.dataset.c));
   l.querySelectorAll('[data-k]').forEach(b=>b.onclick=async()=>{const id=b.dataset.k,p=await ask('New PIN for '+S.emps[id].n,'4 digits');
     if(p===null)return;if(!okPin(p)){msg('PIN must be 4 digits','err');return}S.emps[id].h=await sha(id+':'+p);save();msg('PIN updated','ok')});
   l.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{if(confirm('Remove '+b.dataset.d+'?')){delete S.emps[b.dataset.d];delete S.wal[b.dataset.d];save();renderEmps()}})}
-$('eadd').onclick=async()=>{const id=$('eid').value.trim().toUpperCase(),n=$('enm').value.trim(),p=$('epin').value;
+$('eadd').onclick=async()=>{const id=$('eid').value.trim().toUpperCase(),n=$('enm').value.trim(),p=$('epin').value,c=normUid($('ecard').value);
   if(!id||!n){msg('ID and name required','err');return}if(!okPin(p)){msg('PIN must be 4 digits','err');return}if(S.emps[id]){msg('ID already exists','err');return}
-  S.emps[id]={n,h:await sha(id+':'+p)};save();['eid','enm','epin'].forEach(x=>$(x).value='');renderEmps()};
+  if(c&&cardOwner(c)){msg('That card already belongs to '+esc(S.emps[cardOwner(c)].n),'err');return}
+  S.emps[id]={n,h:await sha(id+':'+p),c:c||undefined};save();['eid','enm','epin','ecard'].forEach(x=>$(x).value='');renderEmps()};
 $('apin').onclick=async()=>{const p=await ask('New admin PIN','4 digits');if(p===null)return;if(!okPin(p)){msg('PIN must be 4 digits','err');return}
   S.adm=await sha('ADMIN:'+p);save();msg('Admin PIN updated','ok')};
 
-
-
-function saveFile(name,data){const b=data instanceof Blob?data:new Blob([data],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(b),a=document.createElement('a');
-  a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000)}
-/* QR cards */
-const fname=s=>String(s).replace(/[^A-Za-z0-9_-]/g,'_');
-function cardCanvas(id,name){const h=document.createElement('div');
-  new QRCode(h,{text:id,width:300,height:300,correctLevel:QRCode.CorrectLevel.M});
-  const src=h.querySelector('canvas'),c=document.createElement('canvas');c.width=420;c.height=520;const x=c.getContext('2d');
-  x.fillStyle='#fff';x.fillRect(0,0,420,520);x.strokeStyle='#cfcfc8';x.lineWidth=2;x.strokeRect(6,6,408,508);
-  x.textAlign='center';x.fillStyle='#1f7a4d';x.font='bold 18px system-ui,sans-serif';x.fillText('CANTEEN SUBSIDY',210,44);
-  x.imageSmoothingEnabled=false;x.drawImage(src,60,66,300,300);
-  let f=28;x.fillStyle='#111';do{x.font='bold '+f+'px system-ui,sans-serif';f--}while(x.measureText(name).width>370&&f>12);
-  x.fillText(name,210,418);x.fillStyle='#555';x.font='20px ui-monospace,Menlo,monospace';x.fillText(id,210,452);
-  x.font='14px system-ui,sans-serif';x.fillText('Scan at the canteen counter',210,492);return c}
-async function saveCards(ids){try{
-  let c,name;
-  if(ids.length===1){c=cardCanvas(ids[0],S.emps[ids[0]].n);name='qr-'+fname(ids[0])+'.png'}
-  else{const cols=2,rows=Math.ceil(ids.length/cols);c=document.createElement('canvas');c.width=cols*420;c.height=rows*520;
-    const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
-    ids.forEach((id,i)=>x.drawImage(cardCanvas(id,S.emps[id].n),(i%cols)*420,Math.floor(i/cols)*520));name='qr-all-employees.png'}
-  const blob=await new Promise(r=>c.toBlob(r,'image/png'));
-  saveFile(name,blob);msg('QR image downloaded','ok')}
-  catch(e){msg('Could not save QR image','err')}}
-$('eall').onclick=()=>{const ids=Object.keys(S.emps);if(!ids.length){msg('No employees yet','err');return}saveCards(ids)};
-
 /* admin: daily report */
+function saveFile(name,data){const b=new Blob([data],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(b),a=document.createElement('a');
+  a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000)}
 const dayLog=()=>{const d=$('rdate').value;return S.log.filter(x=>ymd(new Date(x.ts))===d).sort((a,b)=>a.ts-b.ts)};
 function renderLog(){const tl=dayLog();
   $('sum').textContent=`${tl.length} transactions · subsidy ${peso(tl.reduce((a,x)=>a+x.sub,0))} · cash ${peso(tl.reduce((a,x)=>a+x.cash,0))} · total ${peso(tl.reduce((a,x)=>a+x.total,0))}`;
   $('llist').innerHTML=tl.map(x=>`<div class="li"><span>${esc(x.name)}<div class="mu">${new Date(x.ts).toLocaleTimeString()}</div></span><span style="text-align:right">${peso(x.total)}<div class="mu">sub ${peso(x.sub)}${x.cash?' · cash '+peso(x.cash):''}</div></span></div>`).join('')||'<div class="mu" style="margin-top:8px">No transactions.</div>'}
 $('rdate').onchange=renderLog;
 const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
-$('exp').onclick=async()=>{const tl=dayLog();if(!tl.length){msg('Nothing to export for this date','err');return}
+$('exp').onclick=()=>{const tl=dayLog();if(!tl.length){msg('Nothing to export for this date','err');return}
   const rows=[['Date','Time','Employee ID','Name','Items','Total','Subsidy used','Cash paid']];
   tl.forEach(x=>{const d=new Date(x.ts);rows.push([ymd(d),d.toLocaleTimeString(),x.id,x.name,x.items,x.total.toFixed(2),x.sub.toFixed(2),x.cash.toFixed(2)])});
   const s=k=>tl.reduce((a,x)=>a+x[k],0).toFixed(2);rows.push(['TOTAL','','','',tl.reduce((a,x)=>a+x.items,0),s('total'),s('sub'),s('cash')]);
-  const csv='\ufeff'+rows.map(r=>r.map(q).join(',')).join('\r\n');
-  saveFile('canteen-report-'+$('rdate').value+'.csv',csv);msg('Report downloaded','ok')};
+  saveFile('canteen-report-'+$('rdate').value+'.csv','\ufeff'+rows.map(r=>r.map(q).join(',')).join('\r\n'));msg('Report downloaded','ok')};
 
 init();setInterval(()=>{if(cur)drawCust(wallet(cur))},30000);
 </script></body></html>
