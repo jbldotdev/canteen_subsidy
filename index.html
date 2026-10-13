@@ -43,7 +43,7 @@ input{width:100%;min-width:0;padding:12px;font-size:17px;border:1px solid var(--
 <section id="pos">
   <div class="card" id="scanCard">
     <div class="tap"><div id="cardIco"></div><div class="mu" id="rstat" style="margin-top:6px"></div></div>
-    <div class="row"><input id="manual" placeholder="Employee ID or card UID" autocapitalize="characters" autocomplete="off"><button class="ib" id="goBtn" title="Look up"></button></div>
+    <div class="row"><input id="manual" placeholder="Employee ID" autocapitalize="characters" autocomplete="off"><button class="ib" id="goBtn" title="Look up"></button></div>
   </div>
   <div class="card hide" id="cust">
     <div class="row"><div class="sp"><div id="cName" style="font-weight:700;font-size:18px"></div><div class="mu" id="cId"></div></div><button class="ib g" id="cancelBtn" title="Cancel"></button></div>
@@ -62,7 +62,7 @@ input{width:100%;min-width:0;padding:12px;font-size:17px;border:1px solid var(--
 
 <section id="emp" class="hide">
   <div class="card"><div class="row"><input id="eid" placeholder="ID" autocapitalize="characters"><input id="enm" placeholder="Name"></div>
-  <div class="row" style="margin-top:8px"><input id="ecard" placeholder="Card UID" autocapitalize="characters"><button class="ib" id="ecardBtn" title="Tap card to read its UID"></button></div>
+  <div class="row" style="margin-top:8px"><input id="ecard" placeholder="Tap a card to register" readonly><button class="ib" id="ecardBtn" title="Tap card to read its UID"></button></div>
   <div class="row" style="margin-top:8px"><span class="mu sp">Card can also be assigned later</span><button class="ib" id="apin" title="Change admin PIN"></button><button class="ib p" id="eadd" title="Add employee"></button></div></div>
   <div id="elist"></div>
 </section>
@@ -129,7 +129,7 @@ async function disconnect(){reading=false;try{rdr&&await rdr.cancel()}catch(e){}
 async function readLoop(){reading=true;const dec=new TextDecoder();let buf='';
   while(port&&port.readable&&reading){rdr=port.readable.getReader();
     try{for(;;){const {value,done}=await rdr.read();if(done)break;buf+=dec.decode(value,{stream:true});
-      let i;while((i=buf.indexOf('\n'))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(line){const u=parseUid(line);$('dbg').textContent='Reader says: '+line+(u?'  →  card '+u:'');
+      let i;while((i=buf.indexOf('\n'))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(line){const u=parseUid(line);if(line==='READY')$('dbg').textContent='Reader ready';
         if(u){try{onCard(u)}catch(err){msg('Card error: '+esc(err.message),'err')}}}}}}
     catch(e){break}finally{rdr.releaseLock()}}
   if(reading){reading=false;try{await port.close()}catch(e){}port=null;setConn(false);msg('Reader disconnected','err')}}
@@ -143,7 +143,7 @@ function parseUid(line){const l=line.replace(/0x/gi,'').trim();
   let m=l.match(/\b[0-9A-Fa-f]{8,20}\b/);if(m)return normUid(m[0]);
   m=l.match(/(?:\b[0-9A-Fa-f]{2}\b[\s:-]?){4,10}/);return m?normUid(m[0]):null}
 /* card taps */
-let armed=null;
+let armed=null,newCard='';
 function arm(t){if(!port){msg('Connect the reader first (plug icon), or type the UID by hand.','err');return}
   armed=t;msg('Tap the card on the reader now… (lift it off first if it is already on the reader)','ok',20000);setTimeout(()=>{if(armed===t){armed=null;msg('Card read timed out','err')}},20000)}
 function onCard(uid){
@@ -151,12 +151,12 @@ function onCard(uid){
   if(inEmp){
     const t=armed||'form';armed=null;
     if(own&&own!==t){msg('That card already belongs to '+esc(S.emps[own].n)+' ('+esc(own)+')','err');send('ERR\n');return}
-    if(t==='form'){$('ecard').value=uid;msg('Card '+uid+' captured. Fill in the rest and tap +','ok')}
-    else{S.emps[t].c=uid;save();renderEmps();msg('Card '+uid+' assigned to '+esc(S.emps[t].n),'ok')}
+    if(t==='form'){newCard=uid;$('ecard').value='✓ Card captured';msg('Card captured. Fill in the rest and tap +','ok')}
+    else{S.emps[t].c=uid;save();renderEmps();msg('Card assigned to '+esc(S.emps[t].n),'ok')}
     send('OK\n');return}
   if(!$('pos').classList.contains('hide')){
     if(cur){msg('Finish or cancel the current transaction first','err');send('ERR\n');return}
-    if(!own){msg('Card not registered: '+uid+'. Register it on the Employees tab.','err');send('ERR\n');return}lookup(own)}}
+    if(!own){msg('Card not registered. Register it on the Employees tab.','err');send('ERR\n');return}lookup(own)}}
 $('ecardBtn').onclick=()=>arm('form');
 
 async function tab(n){
@@ -173,8 +173,11 @@ $('lock').onclick=()=>tab('pos');
 function wallet(id){let w=S.wal[id];const now=Date.now();
   if(!w||now-w.issued>=DAY){w=S.wal[id]={issued:now,bal:SUB};save()}return w}
 function lookup(raw){const t=String(raw||'').trim().toUpperCase(),id=S.emps[t]?t:cardOwner(normUid(t));
-  if(!id){msg('Unknown employee or card: '+esc(t||'(empty)'),'err');send('ERR\n');return}
-  cur=id;cart=[];const w=wallet(id);
+  if(!id){msg('Employee not found','err');send('ERR\n');return}
+  const w=wallet(id);
+  if(w.bal<=0){const left=w.issued+DAY-Date.now(),h=Math.floor(left/36e5),mi=Math.floor(left%36e5/6e4);
+    msg(`${esc(S.emps[id].n)}: today's subsidy is already used up. New ${peso(SUB)} in ${h}h ${mi}m.`,'err',8000);send('ERR\n');$('manual').value='';return}
+  cur=id;cart=[];
   $('cName').textContent=S.emps[id].n;$('cId').textContent=id;
   ['cust','items'].forEach(x=>$(x).classList.remove('hide'));$('scanCard').classList.add('hide');
   $('manual').value='';drawCust(w);drawCart();$('price').focus()}
@@ -201,14 +204,14 @@ $('chargeBtn').onclick=()=>{const id=cur,e=S.emps[id],t=cart.reduce((a,i)=>a+i.p
 
 /* admin: employees */
 function renderEmps(){const l=$('elist');l.innerHTML=Object.entries(S.emps).map(([id,e])=>
-  `<div class="card"><div class="row"><div class="sp"><b>${esc(e.n)}</b><div class="mu">${esc(id)} · ${e.c?'card '+e.c:'no card'}</div></div>
+  `<div class="card"><div class="row"><div class="sp"><b>${esc(e.n)}</b><div class="mu">${esc(id)} · ${e.c?'card assigned':'no card'}</div></div>
   <button class="ib" data-c="${esc(id)}" title="Assign / replace card">${ico('card')}</button><button class="ib d" data-d="${esc(id)}" title="Remove">${ico('trash')}</button></div></div>`).join('');
   l.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>arm(b.dataset.c));
   l.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{if(confirm('Remove '+b.dataset.d+'?')){delete S.emps[b.dataset.d];delete S.wal[b.dataset.d];save();renderEmps()}})}
-$('eadd').onclick=()=>{const id=$('eid').value.trim().toUpperCase(),n=$('enm').value.trim(),c=normUid($('ecard').value);
+$('eadd').onclick=()=>{const id=$('eid').value.trim().toUpperCase(),n=$('enm').value.trim(),c=newCard;
   if(!id||!n){msg('ID and name required','err');return}if(S.emps[id]){msg('ID already exists','err');return}
   if(c&&cardOwner(c)){msg('That card already belongs to '+esc(S.emps[cardOwner(c)].n),'err');return}
-  S.emps[id]={n,c:c||undefined};save();['eid','enm','ecard'].forEach(x=>$(x).value='');renderEmps()};
+  S.emps[id]={n,c:c||undefined};save();['eid','enm','ecard'].forEach(x=>$(x).value='');newCard='';renderEmps()};
 $('apin').onclick=async()=>{const p=await ask('New admin PIN','4 digits');if(p===null)return;if(!okPin(p)){msg('PIN must be 4 digits','err');return}
   S.adm=await sha('ADMIN:'+p);save();msg('Admin PIN updated','ok')};
 
