@@ -21,18 +21,18 @@ header h1{font-size:17px;margin:0;flex:1}
 nav{display:flex;gap:6px;margin-bottom:12px}nav .ib{flex:1;width:auto}
 nav .ib.on{background:var(--ac);color:var(--acx);border-color:var(--ac)}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
-input{width:100%;min-width:0;padding:12px;font-size:17px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
-.row{display:flex;gap:8px;align-items:center}.row>input{flex:1}.sp{flex:1}
+input,select{width:100%;min-width:0;padding:12px;font-size:17px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+.row{display:flex;gap:8px;align-items:center}.row>input,.row>select{flex:1}.sp{flex:1}
 .mu{color:var(--mu);font-size:14px}.big{font-size:40px;font-weight:800;line-height:1.1}
 .li{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd)}
 .tap{text-align:center;padding:6px 0 14px}.tap svg{width:60px;height:60px;fill:none;stroke:var(--ac);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .msg{padding:10px 12px;border-radius:10px;margin-bottom:10px;font-weight:600}
 .msg.err{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
 .msg.ok{background:color-mix(in srgb,var(--ac) 16%,transparent);color:var(--ac)}
+.ib.on{background:var(--ac);color:var(--acx);border-color:var(--ac)}
 .hide{display:none!important}.tot{font-size:15px;display:flex;justify-content:space-between}
 #modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:9}
 #modal .card{width:100%;max-width:320px;margin:0}
-#pin{text-align:center;letter-spacing:.5em;font-size:26px}
 </style></head><body><main>
 <header><h1>Canteen Subsidy</h1>
 <button class="ib" id="conn" title="Connect RFID reader"></button><button class="ib g" id="theme" title="Theme"></button><button class="ib g hide" id="lock" title="Lock admin"></button></header>
@@ -46,38 +46,44 @@ input{width:100%;min-width:0;padding:12px;font-size:17px;border:1px solid var(--
     <div class="row"><input id="manual" placeholder="Employee ID" autocapitalize="characters" autocomplete="off"><button class="ib" id="goBtn" title="Look up"></button></div>
   </div>
   <div class="card hide" id="cust">
-    <div class="row"><div class="sp"><div id="cName" style="font-weight:700;font-size:18px"></div><div class="mu" id="cId"></div></div><button class="ib g" id="cancelBtn" title="Cancel"></button></div>
-    <div style="margin-top:8px" class="mu">Subsidy left</div>
-    <div class="big" id="cBal"></div><div class="mu" id="cExp"></div>
-  </div>
-  <div class="card hide" id="items">
-    <div class="row"><input id="price" type="number" inputmode="decimal" min="0" placeholder="₱ price"><input id="label" placeholder="Item"><button class="ib" id="addBtn" title="Add item"></button></div>
-    <div id="list" style="margin-top:6px"></div>
-    <div class="tot" style="margin-top:10px">Total <b id="total"></b></div>
-    <div class="tot">Subsidy <b id="cov" style="color:var(--ac)"></b></div>
-    <div class="tot">Cash <b id="cash"></b></div>
-    <div class="row" style="margin-top:12px"><span class="mu sp">Tap ✓ to deduct from the subsidy</span><button class="ib p" id="chargeBtn" title="Confirm &amp; deduct" disabled></button></div>
+    <div id="cName" style="font-weight:700;font-size:18px"></div><div class="mu" id="cId"></div>
+    <div style="margin-top:8px" class="mu">Daily subsidy</div>
+    <div class="big" id="cBal" style="color:var(--ac)"></div><div class="mu" id="cExp"></div>
   </div>
 </section>
 
 <section id="emp" class="hide">
+  <div class="card"><div class="row"><span class="mu sp">Bulk import · CSV with ID, Name, Department</span>
+  <button class="ib" id="tplBtn" title="Download CSV template"></button><button class="ib p" id="upBtn" title="Upload employee CSV"></button>
+  <input type="file" id="ifile" accept=".csv,.txt,text/csv" class="hide"></div></div>
   <div class="card"><div class="row"><input id="eid" placeholder="ID" autocapitalize="characters"><input id="enm" placeholder="Name"></div>
-  <div class="row" style="margin-top:8px"><input id="ecard" placeholder="Tap a card to register" readonly><button class="ib" id="ecardBtn" title="Tap card to read its UID"></button></div>
-  <div class="row" style="margin-top:8px"><span class="mu sp">Card can also be assigned later</span><button class="ib" id="apin" title="Change admin PIN"></button><button class="ib p" id="eadd" title="Add employee"></button></div></div>
+  <div class="row" style="margin-top:8px"><input id="edept" placeholder="Department"><input id="ecard" placeholder="Tap a card" readonly><button class="ib" id="ecardBtn" title="Tap card to register it"></button></div>
+  <div class="row" style="margin-top:8px"><span class="mu sp" id="ainfo"></span><button class="ib" id="areset" title="Replace admin card(s)"></button><button class="ib" id="apin" title="Add another admin card"></button><button class="ib p" id="eadd" title="Add employee"></button></div></div>
+  <div class="card"><input id="esearch" placeholder="Search name, ID or department">
+  <div class="row" style="margin-top:8px"><select id="edeptf"></select><select id="esort"><option value="name">Sort: Name</option><option value="id">Sort: Employee ID</option><option value="dept">Sort: Department</option></select></div>
+  <div class="mu" id="ecount" style="margin-top:6px"></div></div>
   <div id="elist"></div>
 </section>
 
-<section id="log" class="hide"><div class="card">
-  <div class="row"><input type="date" id="rdate"><button class="ib p" id="exp" title="Export CSV"></button></div>
-  <div class="mu" id="sum" style="margin-top:10px"></div><div id="llist"></div></div></section>
+<section id="log" class="hide">
+  <div class="card"><div class="mu" style="margin-bottom:6px">Daily report</div>
+  <div class="row"><input type="date" id="rdate"><button class="ib p" id="exp" title="Export day as CSV"></button></div>
+  <div class="mu" id="sum" style="margin-top:10px"></div><div id="llist"></div></div>
+  <div class="card"><div class="mu" style="margin-bottom:6px">Summary report</div>
+  <div class="row"><input type="date" id="sfrom"><input type="date" id="sto"></div>
+  <div class="row" style="margin-top:8px"><button class="ib on" id="gEmp" title="By employee"></button><button class="ib" id="gDept" title="By department"></button><span class="sp"></span><button class="ib p" id="sexp" title="Download summary CSV"></button></div>
+  <div class="row" style="margin-top:8px"><select id="sdept"></select><select id="ssort"><option value="name">Sort: Name</option><option value="id">Sort: Employee ID</option><option value="dept">Sort: Department</option><option value="total">Sort: Highest subsidy used</option></select></div>
+  <input id="ssearch" placeholder="Search name, ID or department" style="margin-top:8px">
+  <div class="mu" id="stot" style="margin-top:10px"></div><div id="slist"></div></div>
+</section>
 </main>
-<div id="modal" class="hide"><div class="card"><div id="mt" style="font-weight:700;margin-bottom:4px"></div><div class="mu" id="ms" style="margin-bottom:8px"></div>
-<input id="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off">
-<div class="row" style="margin-top:10px"><button class="ib" id="mx" title="Cancel" style="flex:1"></button><button class="ib p" id="mo" title="OK" style="flex:1"></button></div></div></div>
+<div id="modal" class="hide"><div class="card"><div id="mt" style="font-weight:700;margin-bottom:4px"></div><div class="mu" id="ms"></div><div class="tap"><div id="mIco"></div></div><button class="ib" id="mx" title="Cancel" style="width:100%"></button></div></div>
 
 <script>
-const SUB=100,DAY=864e5,$=i=>document.getElementById(i),peso=n=>'₱'+n.toFixed(2);
-const IC={card:'<rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22M5 15h4"/>',zap:'<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+const SUB=140,DAY=864e5,$=i=>document.getElementById(i),peso=n=>'₱'+n.toFixed(2);
+const IC={shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
+building:'<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>',
+user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',card:'<rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22M5 15h4"/>',zap:'<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
 go:'<path d="M5 12h14M13 6l6 6-6 6"/>',x:'<path d="M18 6 6 18M6 6l12 12"/>',plus:'<path d="M12 5v14M5 12h14"/>',check:'<path d="M20 6 9 17l-5-5"/>',
 cart:'<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>',
 users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
@@ -87,19 +93,19 @@ key:'<circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 9.2-9.2M16 7l3 3"/>',tras
 sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
 moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',auto:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>'};
 const ico=n=>`<svg viewBox="0 0 24 24">${IC[n]}</svg>`,setI=(id,n)=>$(id).innerHTML=ico(n);
-[['goBtn','go'],['cancelBtn','x'],['addBtn','plus'],['chargeBtn','check'],['t-pos','cart'],['t-emp','users'],['t-log','file'],
-['exp','dl'],['lock','lock'],['eadd','plus'],['apin','key'],['mx','x'],['mo','check'],['conn','zap'],['ecardBtn','card'],['cardIco','card']].forEach(a=>setI(...a));
+[['goBtn','go'],['t-pos','cart'],['t-emp','users'],['t-log','file'],
+['exp','dl'],['lock','lock'],['eadd','plus'],['apin','shield'],['areset','key'],['mx','x'],['mIco','card'],['conn','zap'],['upBtn','upload'],['tplBtn','dl'],['gEmp','user'],['gDept','building'],['sexp','dl'],['ecardBtn','card'],['cardIco','card']].forEach(a=>setI(...a));
 
-const sha=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
-let S=null,cur=null,cart=[],admin=false;
+let S=null,admin=false;
 try{const r=localStorage.getItem('csub2');if(r)S=JSON.parse(r)}catch(e){}
 const save=()=>{try{localStorage.setItem('csub2',JSON.stringify(S))}catch(e){}};
 const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const normUid=v=>String(v||'').trim().toUpperCase().replace(/[\s:-]/g,'');
 const cardOwner=u=>u?Object.keys(S.emps).find(id=>S.emps[id].c===u):undefined;
-async function init(){if(!S){S={adm:await sha('ADMIN:0000'),emps:{EMP001:{n:'Juan Dela Cruz'},EMP002:{n:'Maria Santos'}},wal:{},log:[]};save()}
-  $('rdate').value=ymd(new Date());themeApply();setConn(false);
+function init(){if(!S){S={emps:{EMP001:{n:'Juan Dela Cruz'},EMP002:{n:'Maria Santos'}},wal:{},log:[]}}
+  if(!Array.isArray(S.admCards))S.admCards=[];delete S.adm;save();
+  const now=new Date();$('rdate').value=ymd(now);$('sto').value=ymd(now);$('sfrom').value=ymd(new Date(now.getFullYear(),now.getMonth(),1));themeApply();setConn(false);
   if(SUPPORTED)navigator.serial.getPorts().then(ps=>{if(ps[0])openPort(ps[0]).catch(()=>{})}).catch(()=>{})}
 
 /* theme */
@@ -108,11 +114,6 @@ function themeApply(){const r=document.documentElement;TH==='auto'?r.removeAttri
   setI('theme',TH==='auto'?'auto':TH==='dark'?'moon':'sun');$('theme').title='Theme: '+TH}
 $('theme').onclick=()=>{TH={auto:'light',light:'dark',dark:'auto'}[TH];try{localStorage.setItem('csub-theme',TH)}catch(e){}themeApply()};
 
-/* PIN modal */
-function ask(t,s){return new Promise(res=>{$('mt').textContent=t;$('ms').textContent=s||'';$('pin').value='';$('modal').classList.remove('hide');$('pin').focus();
-  const done=v=>{$('modal').classList.add('hide');$('mo').onclick=$('mx').onclick=$('pin').onkeydown=null;res(v)};
-  $('mo').onclick=()=>done($('pin').value);$('mx').onclick=()=>done(null);$('pin').onkeydown=e=>{if(e.key==='Enter')done($('pin').value)}})}
-const okPin=p=>/^\d{4}$/.test(p||'');
 let mt=0;function msg(t,k,ms=5000){clearTimeout(mt);const m=$('msg');m.innerHTML=t?`<div class="msg ${k}">${t}</div>`:'';if(t)mt=setTimeout(()=>{m.innerHTML=''},ms)}
 
 /* ===== RFID reader over USB serial (Web Serial) ===== */
@@ -146,89 +147,177 @@ function parseUid(line){const l=line.replace(/0x/gi,'').trim();
 let armed=null,newCard='';
 function arm(t){if(!port){msg('Connect the reader first (plug icon), or type the UID by hand.','err');return}
   armed=t;msg('Tap the card on the reader now… (lift it off first if it is already on the reader)','ok',20000);setTimeout(()=>{if(armed===t){armed=null;msg('Card read timed out','err')}},20000)}
+/* ===== admin access by card ===== */
+let waitAdmin=null,adminT=0;
+function askAdmin(){return new Promise(res=>{
+  if(!port){msg('Connect the reader first (bolt icon) to unlock admin.','err');res(false);return}
+  $('mt').textContent='Admin access';
+  $('ms').textContent=S.admCards.length?'Tap an admin card on the reader':'No admin card yet. Tap the card you want to use as the admin card.';
+  $('modal').classList.remove('hide');
+  const done=v=>{waitAdmin=null;$('modal').classList.add('hide');res(v)};
+  waitAdmin=done;$('mx').onclick=()=>done(false)})}
+function renderAdminInfo(){$('ainfo').textContent='Admin cards: '+S.admCards.length}
+
 function onCard(uid){
-  const own=cardOwner(uid),inEmp=!$('emp').classList.contains('hide');
-  if(inEmp){
+  if(admin)adminT=Date.now();
+  const own=cardOwner(uid),isAdm=S.admCards.includes(uid);
+  if(waitAdmin){
+    if(isAdm){send('OK\n');waitAdmin(true);return}
+    if(!S.admCards.length){
+      if(own){$('ms').textContent='That card belongs to an employee. Use a different card.';send('ERR\n');return}
+      S.admCards.push(uid);save();msg('Admin card registered','ok');send('OK\n');waitAdmin(true);return}
+    $('ms').textContent='Not an admin card. Try again.';send('ERR\n');return}
+  if(!$('emp').classList.contains('hide')){
     const t=armed||'form';armed=null;
+    if(t==='admin'||t==='adminR'){
+      if(own){msg('That card belongs to an employee','err');send('ERR\n');return}
+      if(isAdm&&t==='admin'){msg('That card is already an admin card','err');send('ERR\n');return}
+      if(t==='adminR')S.admCards=[uid];else if(S.admCards.length<5)S.admCards.push(uid);else{msg('Maximum of 5 admin cards','err');send('ERR\n');return}
+      save();renderAdminInfo();msg('Admin card saved','ok');send('OK\n');return}
+    if(isAdm){msg('That is an admin card. Use an employee card.','err');send('ERR\n');return}
     if(own&&own!==t){msg('That card already belongs to '+esc(S.emps[own].n)+' ('+esc(own)+')','err');send('ERR\n');return}
     if(t==='form'){newCard=uid;$('ecard').value='✓ Card captured';msg('Card captured. Fill in the rest and tap +','ok')}
     else{S.emps[t].c=uid;save();renderEmps();msg('Card assigned to '+esc(S.emps[t].n),'ok')}
     send('OK\n');return}
   if(!$('pos').classList.contains('hide')){
-    if(cur){msg('Finish or cancel the current transaction first','err');send('ERR\n');return}
+    if(isAdm){msg('Admin card. Open the Employees or Report tab to manage.','ok');send('OK\n');return}
     if(!own){msg('Card not registered. Register it on the Employees tab.','err');send('ERR\n');return}lookup(own)}}
 $('ecardBtn').onclick=()=>arm('form');
 
 async function tab(n){
-  if((n==='emp'||n==='log')&&!admin){const p=await ask('Admin PIN','Required for employees & reports');if(p===null)return;
-    if(await sha('ADMIN:'+p)!==S.adm){msg('Wrong admin PIN','err');return}admin=true;$('lock').classList.remove('hide')}
+  if((n==='emp'||n==='log')&&!admin){if(!(await askAdmin()))return;admin=true;adminT=Date.now();$('lock').classList.remove('hide')}
   if(n==='pos')lockAdmin();armed=null;
   ['pos','emp','log'].forEach(x=>{$(x).classList.toggle('hide',x!==n);$('t-'+x).classList.toggle('on',x===n)});
-  if(n==='emp')renderEmps();if(n==='log')renderLog()}
+  if(n==='emp')renderEmps();if(n==='log'){renderLog();renderSummary()}}
 function lockAdmin(){admin=false;$('lock').classList.add('hide')}
 ['pos','emp','log'].forEach(x=>$('t-'+x).onclick=()=>tab(x));
 $('lock').onclick=()=>tab('pos');
 
-/* cashier */
+/* cashier: one card tap = the whole daily subsidy is claimed */
 function wallet(id){let w=S.wal[id];const now=Date.now();
-  if(!w||now-w.issued>=DAY){w=S.wal[id]={issued:now,bal:SUB};save()}return w}
-function lookup(raw){const t=String(raw||'').trim().toUpperCase(),id=S.emps[t]?t:cardOwner(normUid(t));
+  if(w&&!w.v){if(w.bal===100)w.bal=SUB;w.v=1;save()}   /* carry over wallets made before the change to 140 */
+  if(!w||now-w.issued>=DAY){w=S.wal[id]={issued:now,bal:SUB,v:1};save()}return w}
+let hideT=0;
+function claim(id){const e=S.emps[id],w=wallet(id),left=w.issued+DAY-Date.now(),h=Math.floor(left/36e5),mi=Math.floor(left%36e5/6e4);
+  if(w.bal<=0){msg(`${esc(e.n)}: today's subsidy is already used. New ${peso(SUB)} in ${h}h ${mi}m.`,'err',8000);send('ERR\n');return}
+  const amt=w.bal;w.bal=0;
+  S.log.unshift({ts:Date.now(),id,name:e.n,dept:e.d||'',total:amt,sub:amt,cash:0,items:1});save();send('OK\n');
+  $('cName').textContent=e.n;$('cId').textContent=id;$('cBal').textContent=peso(amt)+' claimed';
+  $('cExp').textContent=`Next subsidy in ${h}h ${mi}m`;$('cust').classList.remove('hide');
+  clearTimeout(hideT);hideT=setTimeout(()=>$('cust').classList.add('hide'),6000)}
+function lookup(raw,manual){const t=String(raw||'').trim().toUpperCase(),id=S.emps[t]?t:cardOwner(normUid(t));
+  $('manual').value='';
   if(!id){msg('Employee not found','err');send('ERR\n');return}
-  const w=wallet(id);
-  if(w.bal<=0){const left=w.issued+DAY-Date.now(),h=Math.floor(left/36e5),mi=Math.floor(left%36e5/6e4);
-    msg(`${esc(S.emps[id].n)}: today's subsidy is already used up. New ${peso(SUB)} in ${h}h ${mi}m.`,'err',8000);send('ERR\n');$('manual').value='';return}
-  cur=id;cart=[];
-  $('cName').textContent=S.emps[id].n;$('cId').textContent=id;
-  ['cust','items'].forEach(x=>$(x).classList.remove('hide'));$('scanCard').classList.add('hide');
-  $('manual').value='';drawCust(w);drawCart();$('price').focus()}
-function drawCust(w){$('cBal').textContent=peso(w.bal);
-  const left=w.issued+DAY-Date.now(),h=Math.floor(left/36e5),m=Math.floor(left%36e5/6e4);
-  $('cExp').textContent=`Expires in ${h}h ${m}m`+(w.bal<=0?' · fully used':'')}
-function drawCart(){const w=wallet(cur),t=cart.reduce((a,i)=>a+i.p,0),c=Math.min(t,w.bal);
-  $('list').innerHTML=cart.map((i,k)=>`<div class="li"><span>${esc(i.l)}</span><span>${peso(i.p)} <button class="ib g d" data-k="${k}" style="width:36px;height:36px">${ico('x')}</button></span></div>`).join('');
-  $('total').textContent=peso(t);$('cov').textContent=peso(c);$('cash').textContent=peso(t-c);$('chargeBtn').disabled=!t;
-  $('list').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{cart.splice(+b.dataset.k,1);drawCart()})}
-function reset(){cur=null;cart=[];['cust','items'].forEach(x=>$(x).classList.add('hide'));$('scanCard').classList.remove('hide');$('manual').focus()}
-$('goBtn').onclick=()=>lookup($('manual').value);
-$('manual').onkeydown=e=>{if(e.key==='Enter')lookup(e.target.value)};
-$('cancelBtn').onclick=reset;
-$('addBtn').onclick=()=>{const p=parseFloat($('price').value);if(!(p>0)){msg('Enter a valid price','err');return}
-  cart.push({p,l:$('label').value.trim()||'Item '+(cart.length+1)});$('price').value='';$('label').value='';drawCart();$('price').focus()};
-$('price').onkeydown=e=>{if(e.key==='Enter')$('addBtn').click()};
-
-/* charge */
-$('chargeBtn').onclick=()=>{const id=cur,e=S.emps[id],t=cart.reduce((a,i)=>a+i.p,0);if(!t)return;
-  const w=wallet(id),c=Math.min(t,w.bal);w.bal=Math.round((w.bal-c)*100)/100;
-  S.log.unshift({ts:Date.now(),id,name:e.n,total:t,sub:c,cash:t-c,items:cart.length});save();send('OK\n');
-  msg(`${esc(e.n)}: ${peso(t)} · subsidy ${peso(c)} · cash ${peso(t-c)} · left ${peso(w.bal)}`,'ok');reset()};
+  if(manual&&!confirm('Claim the daily subsidy for '+S.emps[id].n+'?'))return;
+  claim(id)}
+$('goBtn').onclick=()=>lookup($('manual').value,true);
+$('manual').onkeydown=e=>{if(e.key==='Enter')lookup(e.target.value,true)};
 
 /* admin: employees */
-function renderEmps(){const l=$('elist');l.innerHTML=Object.entries(S.emps).map(([id,e])=>
-  `<div class="card"><div class="row"><div class="sp"><b>${esc(e.n)}</b><div class="mu">${esc(id)} · ${e.c?'card assigned':'no card'}</div></div>
+const NO='(No department)',cmp=(a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true,sensitivity:'base'});
+function fillDepts(sel){const v=sel.value,ds=[...new Set([...Object.values(S.emps).map(e=>e.d||NO),...S.log.map(x=>x.dept).filter(Boolean)])].sort(cmp);
+  sel.innerHTML='<option value="">All departments</option>'+ds.map(d=>`<option>${esc(d)}</option>`).join('');sel.value=ds.includes(v)?v:''}
+function empView(){fillDepts($('edeptf'));
+  const q=$('esearch').value.trim().toLowerCase(),df=$('edeptf').value,so=$('esort').value;
+  const a=Object.entries(S.emps).filter(([id,e])=>(!df||(e.d||NO)===df)&&(!q||(id+' '+e.n+' '+(e.d||'')).toLowerCase().includes(q)));
+  a.sort((x,y)=>so==='id'?cmp(x[0],y[0]):so==='dept'?(cmp(x[1].d||NO,y[1].d||NO)||cmp(x[1].n,y[1].n)):cmp(x[1].n,y[1].n));
+  $('ecount').textContent=a.length+' of '+Object.keys(S.emps).length+' employees';return a}
+function renderEmps(){renderAdminInfo();const l=$('elist');l.innerHTML=empView().map(([id,e])=>
+  `<div class="card"><div class="row"><div class="sp"><b>${esc(e.n)}</b><div class="mu">${esc(id)}${e.d?' · '+esc(e.d):''} · ${e.c?'card assigned':'no card'}</div></div>
   <button class="ib" data-c="${esc(id)}" title="Assign / replace card">${ico('card')}</button><button class="ib d" data-d="${esc(id)}" title="Remove">${ico('trash')}</button></div></div>`).join('');
   l.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>arm(b.dataset.c));
   l.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{if(confirm('Remove '+b.dataset.d+'?')){delete S.emps[b.dataset.d];delete S.wal[b.dataset.d];save();renderEmps()}})}
 $('eadd').onclick=()=>{const id=$('eid').value.trim().toUpperCase(),n=$('enm').value.trim(),c=newCard;
   if(!id||!n){msg('ID and name required','err');return}if(S.emps[id]){msg('ID already exists','err');return}
   if(c&&cardOwner(c)){msg('That card already belongs to '+esc(S.emps[cardOwner(c)].n),'err');return}
-  S.emps[id]={n,c:c||undefined};save();['eid','enm','ecard'].forEach(x=>$(x).value='');newCard='';renderEmps()};
-$('apin').onclick=async()=>{const p=await ask('New admin PIN','4 digits');if(p===null)return;if(!okPin(p)){msg('PIN must be 4 digits','err');return}
-  S.adm=await sha('ADMIN:'+p);save();msg('Admin PIN updated','ok')};
+  S.emps[id]={n,d:$('edept').value.trim(),c:c||undefined};save();['eid','enm','edept','ecard'].forEach(x=>$(x).value='');newCard='';renderEmps()};
+$('apin').onclick=()=>arm('admin');
+$('areset').onclick=()=>{if(confirm('Replace all admin cards with one new card? The old admin cards will stop working once you tap the new one.'))arm('adminR')};
 
 /* admin: daily report */
 function saveFile(name,data){const b=new Blob([data],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(b),a=document.createElement('a');
   a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000)}
 const dayLog=()=>{const d=$('rdate').value;return S.log.filter(x=>ymd(new Date(x.ts))===d).sort((a,b)=>a.ts-b.ts)};
 function renderLog(){const tl=dayLog();
-  $('sum').textContent=`${tl.length} transactions · subsidy ${peso(tl.reduce((a,x)=>a+x.sub,0))} · cash ${peso(tl.reduce((a,x)=>a+x.cash,0))} · total ${peso(tl.reduce((a,x)=>a+x.total,0))}`;
-  $('llist').innerHTML=tl.map(x=>`<div class="li"><span>${esc(x.name)}<div class="mu">${new Date(x.ts).toLocaleTimeString()}</div></span><span style="text-align:right">${peso(x.total)}<div class="mu">sub ${peso(x.sub)}${x.cash?' · cash '+peso(x.cash):''}</div></span></div>`).join('')||'<div class="mu" style="margin-top:8px">No transactions.</div>'}
+  $('sum').textContent=`${tl.length} claims · subsidy used ${peso(tl.reduce((a,x)=>a+x.sub,0))}`;
+  $('llist').innerHTML=tl.map(x=>`<div class="li"><span>${esc(x.name)}<div class="mu">${new Date(x.ts).toLocaleTimeString()}</div></span><span>${peso(x.sub)}</span></div>`).join('')||'<div class="mu" style="margin-top:8px">No transactions.</div>'}
 $('rdate').onchange=renderLog;
 const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
 $('exp').onclick=()=>{const tl=dayLog();if(!tl.length){msg('Nothing to export for this date','err');return}
-  const rows=[['Date','Time','Employee ID','Name','Items','Total','Subsidy used','Cash paid']];
-  tl.forEach(x=>{const d=new Date(x.ts);rows.push([ymd(d),d.toLocaleTimeString(),x.id,x.name,x.items,x.total.toFixed(2),x.sub.toFixed(2),x.cash.toFixed(2)])});
-  const s=k=>tl.reduce((a,x)=>a+x[k],0).toFixed(2);rows.push(['TOTAL','','','',tl.reduce((a,x)=>a+x.items,0),s('total'),s('sub'),s('cash')]);
-  saveFile('canteen-report-'+$('rdate').value+'.csv','\ufeff'+rows.map(r=>r.map(q).join(',')).join('\r\n'));msg('Report downloaded','ok')};
+  const rows=[['Date','Time','Employee ID','Name','Department','Subsidy used']];
+  tl.forEach(x=>{const d=new Date(x.ts);rows.push([ymd(d),d.toLocaleTimeString(),x.id,x.name,x.dept||(S.emps[x.id]&&S.emps[x.id].d)||'',x.sub.toFixed(2)])});
+  rows.push(['TOTAL','','','','',tl.reduce((a,x)=>a+x.sub,0).toFixed(2)]);
+  const csv='\ufeff'+rows.map(r=>r.map(q).join(',')).join('\r\n');
+  saveFile('canteen-report-'+$('rdate').value+'.csv',csv);msg('Report downloaded','ok')};
 
-init();setInterval(()=>{if(cur)drawCust(wallet(cur))},30000);
+
+/* ===== bulk import ===== */
+function parseCSV(text){text=text.replace(/^\ufeff/,'');const first=text.split(/\r?\n/)[0]||'';
+  const d=first.includes('\t')?'\t':((first.match(/;/g)||[]).length>(first.match(/,/g)||[]).length?';':',');
+  const rows=[];let row=[],cell='',q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){cell+='"';i++}else q=false}else cell+=c}
+    else if(c==='"')q=true;
+    else if(c===d){row.push(cell);cell=''}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);rows.push(row);row=[];cell=''}
+    else cell+=c}
+  if(cell!==''||row.length){row.push(cell);rows.push(row)}
+  return rows.map(r=>r.map(x=>x.trim())).filter(r=>r.some(x=>x))}
+$('tplBtn').onclick=()=>saveFile('employee-template.csv','\ufeffID,Name,Department\r\nEMP101,Juan Dela Cruz,Kitchen\r\nEMP102,Maria Santos,Accounting\r\n');
+$('upBtn').onclick=()=>$('ifile').click();
+$('ifile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const rows=parseCSV(await f.text());if(!rows.length){msg('The file is empty','err');return}
+    let iId=0,iNm=1,iDp=rows[0].length>2?2:-1,start=0;const h=rows[0].map(x=>x.toLowerCase());
+    if(h.some(x=>/\bid\b|number|name/.test(x))){start=1;
+      const a=h.findIndex(x=>/\bid\b|number|\bno\.?$/.test(x)),b=h.findIndex(x=>/name/.test(x)),c=h.findIndex(x=>/dep|division|section|unit|team/.test(x));
+      if(a>=0)iId=a;if(b>=0)iNm=b;iDp=c>=0?c:(h.length>2&&![iId,iNm].includes(2)?2:-1)}
+    let add=0,upd=0,skip=0;
+    rows.slice(start).forEach(r=>{const id=(r[iId]||'').trim().toUpperCase(),n=r[iNm]||'',d=iDp>=0?(r[iDp]||''):'';
+      if(!id||!n){skip++;return}
+      if(S.emps[id]){S.emps[id].n=n;if(d)S.emps[id].d=d;upd++}else{S.emps[id]={n,d,c:undefined};add++}});
+    save();renderEmps();msg(`Import done: ${add} added, ${upd} updated, ${skip} skipped`,'ok',8000)}
+  catch(err){msg('Could not read that file','err')}};
+
+/* ===== summary report (by employee / department) ===== */
+let grp='emp';
+function setGrp(g){grp=g;$('gEmp').classList.toggle('on',g==='emp');$('gDept').classList.toggle('on',g==='dept');renderSummary()}
+$('gEmp').onclick=()=>setGrp('emp');$('gDept').onclick=()=>setGrp('dept');
+$('sfrom').onchange=$('sto').onchange=()=>renderSummary();
+function buildSummary(){
+  const f=$('sfrom').value,t=$('sto').value,NO='(No department)';
+  const L=S.log.filter(x=>{const d=ymd(new Date(x.ts));return(!f||d>=f)&&(!t||d<=t)});
+  const deptOf=x=>x.dept||(S.emps[x.id]&&S.emps[x.id].d)||NO;
+  const mk=o=>Object.assign({tx:0,items:0,total:0,sub:0,cash:0},o),add=(a,x)=>{a.tx++;a.items+=x.items;a.total+=x.total;a.sub+=x.sub;a.cash+=x.cash};
+  const m={};
+  if(grp==='emp'){
+    Object.keys(S.emps).forEach(id=>m[id]=mk({k:id,name:S.emps[id].n,dept:S.emps[id].d||NO}));
+    L.forEach(x=>add(m[x.id]||(m[x.id]=mk({k:x.id,name:x.name,dept:deptOf(x)})),x));
+  }else{
+    Object.keys(S.emps).forEach(id=>{const d=S.emps[id].d||NO;(m[d]||(m[d]=mk({k:d,emps:0}))).emps++});
+    L.forEach(x=>add(m[deptOf(x)]||(m[deptOf(x)]=mk({k:deptOf(x),emps:0})),x));
+  }
+  const df=$('sdept').value,q=$('ssearch').value.trim().toLowerCase(),so=$('ssort').value;
+  const rows=Object.values(m).filter(r=>grp==='emp'?((!df||r.dept===df)&&(!q||(r.k+' '+r.name+' '+r.dept).toLowerCase().includes(q))):((!df||r.k===df)&&(!q||r.k.toLowerCase().includes(q))));
+  rows.sort((a,b)=>so==='total'?(b.sub-a.sub||cmp(a.k,b.k)):grp==='emp'?(so==='id'?cmp(a.k,b.k):so==='dept'?(cmp(a.dept,b.dept)||cmp(a.name,b.name)):cmp(a.name,b.name)):cmp(a.k,b.k));
+  const tot=mk({});rows.forEach(r=>{tot.tx+=r.tx;tot.items+=r.items;tot.total+=r.total;tot.sub+=r.sub;tot.cash+=r.cash});
+  return{rows,tot,f,t}}
+function renderSummary(){fillDepts($('sdept'));const {rows,tot}=buildSummary();
+  $('stot').textContent=`${tot.tx} claims · subsidy used ${peso(tot.sub)}`;
+  $('slist').innerHTML=rows.map(r=>`<div class="li"><span>${esc(grp==='emp'?r.name:r.k)}<div class="mu">${grp==='emp'?esc(r.k)+' · '+esc(r.dept):r.emps+' employee(s)'}</div></span><span style="text-align:right">${peso(r.sub)}<div class="mu">${r.tx} claim(s)</div></span></div>`).join('')||'<div class="mu" style="margin-top:8px">No data.</div>'}
+$('sexp').onclick=()=>{const {rows,tot,f,t}=buildSummary();
+  if(!tot.tx){msg('No transactions in this period','err');return}
+  const n2=v=>v.toFixed(2);let head,body,last;
+  if(grp==='emp'){head=['Employee ID','Name','Department','Claims','Subsidy used'];
+    body=rows.map(r=>[r.k,r.name,r.dept,r.tx,n2(r.sub)]);last=['TOTAL','','',tot.tx,n2(tot.sub)]}
+  else{head=['Department','Employees','Claims','Subsidy used'];
+    body=rows.map(r=>[r.k,r.emps,r.tx,n2(r.sub)]);last=['TOTAL',rows.reduce((a,r)=>a+r.emps,0),tot.tx,n2(tot.sub)]}
+  const csv='\ufeff'+[['Period',f+' to '+t],head,...body,last].map(r=>r.map(q).join(',')).join('\r\n');
+  saveFile(`canteen-summary-by-${grp==='emp'?'employee':'department'}-${f}_to_${t}.csv`,csv);msg('Summary downloaded','ok')};
+
+$('esearch').oninput=$('edeptf').onchange=$('esort').onchange=renderEmps;
+$('ssearch').oninput=$('sdept').onchange=$('ssort').onchange=renderSummary;
+
+document.addEventListener('click',()=>{if(admin)adminT=Date.now()});
+setInterval(()=>{if(admin&&Date.now()-adminT>300000){tab('pos');msg('Admin locked after 5 minutes of inactivity','ok')}},15000);
+init();
 </script></body></html>
